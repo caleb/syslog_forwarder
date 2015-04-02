@@ -1,0 +1,20 @@
+[package]
+name = "syslog_forwarder"
+version = "0.2.1"
+authors = ["Caleb Land <caleb@land.fm>"]
+license = "MIT"
+description = "Listen on a domain socket (e.g. /dev/log) and forward requests to an syslog server"
+repository = "https://github.com/caleb/syslog_forwarder"
+documentation = ""
+readme = "README.md"
+keywords = ["posix", "unix", "syslog", "logging"]
+
+[dependencies]
+nix = "*"
+lazy_static = "*"
+getopts = "*"
+
+[dependencies.mio]
+git = "https://github.com/carllerche/mio.git"
+
+[dev-dependencies]

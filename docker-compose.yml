@@ -1,0 +1,14 @@
+rsyslog:
+  image: docker.rodeopartners.com/rsyslog
+  ports:
+    - "514:514"
+  volumes:
+    - ./log:/var/log
+
+rust:
+  image: docker.rodeopartners.com/rust
+  command: /bin/bash -c "while true; do sleep 10; done"
+  volumes:
+    - .:/source
+  links:
+    - rsyslog:rsyslog
