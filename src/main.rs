@@ -125,7 +125,7 @@ impl Handler for SyslogForwarder {
   fn writable(&mut self, event_loop: &mut EventLoop<SyslogForwarder>, token: Token) {
     match token {
       OUTGOING => self.outgoing.writable(&mut self.incoming, event_loop).unwrap(),
-      t => panic!("Got writable for non-OUTGOING fd")
+      _ => panic!("Got writable for non-OUTGOING fd")
     }
   }
 
@@ -145,7 +145,7 @@ impl Handler for SyslogForwarder {
 fn main() {
   // Parse the commend line arguments
   let args:Vec<String> = env::args().collect();
-  let program = args[0].clone();
+  let _program = args[0].clone();
 
   let mut opts = Options::new();
   opts.optopt("d", "destination", "set the destination address:port", "ADDRESS");
