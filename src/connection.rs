@@ -10,7 +10,7 @@ impl Connection {
   pub fn new(socket: NonBlock<UnixStream>) -> Connection {
     Connection {
       socket: socket,
-      token: Token(-1)
+      token: Token(0)
     }
   }
 

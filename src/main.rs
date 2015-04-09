@@ -1,4 +1,3 @@
-#![feature(libc)]
 #![feature(collections)]
 
 extern crate nix;
@@ -80,7 +79,7 @@ impl SyslogForwarder {
          outgoing_socket:NonBlock<UdpSocket>,
          syslog_address:SocketAddr) -> SyslogForwarder {
 
-    let mut max:usize = 0;
+    let mut max:usize = 1;
     for k in incoming_sockets.keys() {
       if k.as_usize() > max {
         max = k.as_usize();
@@ -101,14 +100,14 @@ impl SyslogForwarder {
 
   #[inline]
   fn is_incoming_token(&self, token: Token) -> bool {
-    token.as_usize() <= self.incoming_token_max
+    (token.as_usize() <= self.incoming_token_max) && (token.as_usize() > 0)
   }
 }
 
 /*
  * Set up the top lever handler that will delegate to other handlers
  */
-const OUTGOING: Token = Token(0);
+const OUTGOING: Token = Token(1);
 
 impl Handler for SyslogForwarder {
   type Timeout = ();
