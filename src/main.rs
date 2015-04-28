@@ -61,7 +61,9 @@ fn register_signals() {
   let sig_action = signal::SigAction::new(handle_sigint,
                                           signal::SockFlag::empty(),
                                           signal::SigSet::empty());
-  let _ = signal::sigaction(signal::SIGINT, &sig_action);
+  unsafe {
+    let _ = signal::sigaction(signal::SIGINT, &sig_action);
+  }
 }
 
 /*
@@ -107,7 +109,7 @@ impl SyslogForwarder {
 /*
  * Set up the top lever handler that will delegate to other handlers
  */
-const OUTGOING: Token = Token(1);
+const OUTGOING: Token = Token(0);
 
 impl Handler for SyslogForwarder {
   type Timeout = ();

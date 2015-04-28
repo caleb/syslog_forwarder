@@ -6,7 +6,7 @@ rsyslog:
     - ./log:/var/log
 
 rust:
-  image: docker.rodeopartners.com/rust:squeeze
+  image: docker.rodeopartners.com/rust:nightly-squeeze
   command: /bin/bash -c "while true; do sleep 10; done"
   volumes:
     - .:/source
