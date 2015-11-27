@@ -3,6 +3,7 @@
 extern crate nix;
 extern crate mio;
 extern crate getopts;
+extern crate bytes;
 
 #[macro_use]
 extern crate lazy_static;
@@ -23,6 +24,7 @@ use std::collections::HashMap;
 
 use mio::*;
 use mio::udp::UdpSocket;
+use mio::unix::UnixSocket;
 use mio::unix::UnixListener;
 use nix::sys::signal;
 
@@ -77,8 +79,8 @@ struct SyslogForwarder {
 }
 
 impl SyslogForwarder {
-  fn new(incoming_sockets:HashMap<Token, NonBlock<UnixListener>>,
-         outgoing_socket:NonBlock<UdpSocket>,
+  fn new(incoming_sockets:HashMap<Token, UnixListener>,
+         outgoing_socket:UdpSocket,
          syslog_address:SocketAddr) -> SyslogForwarder {
 
     let mut max:usize = 1;
@@ -115,18 +117,18 @@ impl Handler for SyslogForwarder {
   type Timeout = ();
   type Message = ();
 
-  fn readable(&mut self, event_loop: &mut EventLoop<SyslogForwarder>, token: Token, _hint: ReadHint) {
-    match token {
-      OUTGOING => panic!("Got readable for OUTGOING (token 0)"),
-      t if self.is_incoming_token(t) => self.incoming.accept(event_loop, token).unwrap(),
-      t => self.incoming.readable(&self.outgoing, event_loop, t).unwrap()
-    }
-  }
-
-  fn writable(&mut self, event_loop: &mut EventLoop<SyslogForwarder>, token: Token) {
-    match token {
-      OUTGOING => self.outgoing.writable(&mut self.incoming, event_loop).unwrap(),
-      _ => panic!("Got writable for non-OUTGOING fd")
+  fn ready(&mut self, event_loop: &mut EventLoop<SyslogForwarder>, token: Token, events: mio::EventSet) {
+    if (events.is_writable()) {
+      match token {
+        OUTGOING => self.outgoing.writable(&mut self.incoming, event_loop).unwrap(),
+        _ => panic!("Got writable for non-OUTGOING fd")
+      }
+    } else if (events.is_readable()) {
+      match token {
+        OUTGOING => panic!("Got readable for OUTGOING (token 0)"),
+        t if self.is_incoming_token(t) => self.incoming.accept(event_loop, token).unwrap(),
+        t => self.incoming.readable(&self.outgoing, event_loop, t).unwrap()
+      }
     }
   }
 
@@ -174,7 +176,7 @@ fn main() {
   // Create a listener that listens on a unix socket
   for socket_path in &socket_locations {
     let addr = Path::new(&socket_path);
-    let incoming_socket = unix::bind(addr).unwrap();
+    let incoming_socket = UnixSocket::bind(addr).unwrap();
 
     let token = Token(i);
     i += 1;
@@ -184,10 +186,10 @@ fn main() {
   }
 
   // Create a socket to talk to the syslog server
-  let outgoing_socket = mio::udp::v4().unwrap();
+  let outgoing_socket = UdpSocket::v4().unwrap();
   event_loop.register_opt(&outgoing_socket,
                           OUTGOING,
-                          Interest::writable(),
+                          EventSet::writable(),
                           PollOpt::oneshot()).unwrap();
 
   let mut syslog_forwarder = SyslogForwarder::new(incoming_map,

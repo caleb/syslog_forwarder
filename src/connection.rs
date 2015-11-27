@@ -2,12 +2,12 @@ use mio::*;
 use mio::unix::UnixStream;
 
 pub struct Connection {
-  socket: NonBlock<UnixStream>,
+  socket: UnixStream,
   token: Token
 }
 
 impl Connection {
-  pub fn new(socket: NonBlock<UnixStream>) -> Connection {
+  pub fn new(socket: UnixStream) -> Connection {
     Connection {
       socket: socket,
       token: Token(0)
@@ -15,12 +15,12 @@ impl Connection {
   }
 
   #[inline]
-  pub fn socket(&self) -> &NonBlock<UnixStream> {
+  pub fn socket(&self) -> &UnixStream {
     &self.socket
   }
 
   #[inline]
-  pub fn mut_socket(&mut self) -> &mut NonBlock<UnixStream> {
+  pub fn mut_socket(&mut self) -> &mut UnixStream {
     &mut self.socket
   }
 

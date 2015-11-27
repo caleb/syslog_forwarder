@@ -1,24 +1,25 @@
 use std::io::Result;
+use std::io::{Read, Write};
 use std::collections::VecDeque;
 use std::collections::HashMap;
 
 use mio::*;
 use mio::util::*;
 use mio::unix::UnixListener;
-use mio::buf::ByteBuf;
+use bytes::ByteBuf;
 
 use super::outgoing::Outgoing;
 use super::connection::Connection;
 use super::SyslogForwarder;
 
 pub struct Incoming {
-  sockets: HashMap<Token, NonBlock<UnixListener>>,
+  sockets: HashMap<Token, UnixListener>,
   connections: Slab<Connection>,
   message_queue: VecDeque<ByteBuf>
 }
 
 impl Incoming {
-  pub fn new(sockets: HashMap<Token, NonBlock<UnixListener>>, token_start: usize) -> Incoming {
+  pub fn new(sockets: HashMap<Token, UnixListener>, token_start: usize) -> Incoming {
     Incoming {
       sockets: sockets,
       connections: Slab::new_starting_at(Token(token_start), 128),
@@ -27,8 +28,7 @@ impl Incoming {
   }
 
   pub fn accept(&mut self, event_loop: &mut EventLoop<SyslogForwarder>, token: Token) -> Result<()> {
-    // Accept the connection and unrap the Result, and then unwrap the NonBlock
-    // to get at the actual result listener
+    // Accept the connection and unrap the Result to get at the actual result listener
     let socket = self.sockets.get(&token).expect("Incoming socket with token not found").accept().unwrap().unwrap();
     let connection = Connection::new(socket);
     let token = self.connections.insert(connection)
@@ -39,7 +39,7 @@ impl Incoming {
 
     event_loop.register_opt(self.connections[token].socket(),
                             token,
-                            Interest::readable() | Interest::hup(),
+                            EventSet::readable() | EventSet::hup(),
                             PollOpt::level())
       .ok().expect("could not register socket with event loop");
 
@@ -77,7 +77,7 @@ impl Incoming {
   }
 
   #[inline]
-  pub fn message_queue(&self) -> &VecDeque<ByteBuf> {
-    &self.message_queue
-  }
+pub fn message_queue(&self) -> &VecDeque<ByteBuf> {
+  &self.message_queue
+}
 }

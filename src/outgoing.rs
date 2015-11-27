@@ -9,12 +9,12 @@ use super::incoming::Incoming;
 use super::SyslogForwarder;
 
 pub struct Outgoing {
-  pub socket: NonBlock<UdpSocket>,
+  pub socket: UdpSocket,
   pub addr: SocketAddr
 }
 
 impl Outgoing {
-  pub fn new(socket: NonBlock<UdpSocket>, addr: SocketAddr) -> Outgoing {
+  pub fn new(socket: UdpSocket, addr: SocketAddr) -> Outgoing {
     Outgoing {
       socket: socket,
       addr: addr
@@ -34,7 +34,7 @@ impl Outgoing {
   pub fn reregister(&self, event_loop: &mut EventLoop<SyslogForwarder>) {
     event_loop.reregister(&self.socket,
                           OUTGOING,
-                          Interest::writable(),
+                          EventSet::writable(),
                           PollOpt::oneshot()).ok();
   }
 }
